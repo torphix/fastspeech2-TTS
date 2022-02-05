@@ -1,0 +1,12 @@
+devices: 1
+max_epochs: 3
+min_epochs: 3
+auto_lr_find: True
+auto_scale_batch_size: "binsearch"
+check_val_every_n_epoch: 2
+accelerator: "gpu"
+# Load checkpoint from here
+gradient_clip_val: 1.
+gradient_clip_algorithm: "value"
+accumulate_grad_batches: 2
+checkpoint_path: # "/home/j/Desktop/Programming/AI/DeepLearning/speech_clone/tb_logs/fs2/version_9/checkpoints/epoch=77-step=62633.ckpt"

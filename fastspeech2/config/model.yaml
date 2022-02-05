@@ -1,0 +1,46 @@
+model:
+  decoder:
+    hid_d: 512
+    in_d: 80
+    k_size: 5
+    n_blocks: 6
+    n_heads: 4
+    out_d: 80
+  dropout: 0.5
+  emb_d: 256
+  encoder:
+    hid_d: 512
+    in_d: 256
+    k_size: 5
+    n_blocks: 6
+    n_heads: 4
+    out_d: 256
+  n_speakers: 430
+  pad_idx: 0
+  phoneme_dict_size: 360
+  postnet:
+    n_layers: 6
+  variance_config:
+    energy_feature_level: phoneme_frame
+    hid_d: 512
+    in_d: 256
+    k_size: 5
+    metadata: null
+    n_bins: 256
+    out_d: 256
+    pitch_feature_level: phoneme_frame
+    quantization_type: linear
+
+speaker_embedding:
+  preprocess: False
+  embed: True # True if multispeakers
+  type: null # 'lstm' / 'quant' / None
+  model_path: speaker_encoder/pretrained_model/best_model.pth.tar
+  config_path: speaker_encoder/pretrained_model/config.json
+
+dataloader:
+  batch_size: 8
+  num_workers: 4
+  shuffle: True
+  pin_memory: False
+  split: [95, 5]

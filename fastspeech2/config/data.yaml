@@ -1,0 +1,25 @@
+audio:
+  energy_feature_level: phoneme_frame
+  f_max: 8000
+  f_min: 0
+  hop_length: 256
+  max_wav_value: 32768.0
+  min_level_db: -100
+  n_fft: 1024
+  n_mels: 80
+  norm_type: mean_std
+  normalization: true
+  pitch_feature_level: phoneme_frame
+  sample_rate: 22050
+  win_length: 1024
+dataset: LJSpeech
+dataset_dir: fastspeech2/data/database
+lexicon_path: fastspeech2/lexicons/english_libre.txt
+speaker_embedding:
+  embed: false
+  preprocess: false
+  type: None
+text:
+  language: en
+  text_cleaners:
+  - english_cleaners
