@@ -3,8 +3,7 @@
 - Unofficial fastspeech2 TTS system, original paper: https://arxiv.org/pdf/2006.04558.pdf
 - Created as part of a personal project as well as to practice implementing deep learning techniques.
 - For inference and/or fine tuning on your own datasets see below
-- Accompanying blog post on things I'v learnt implementing this paper is [here] (https://www.genome.gov/)
-
+- Accompanying blog post on things I'v learnt implementing this paper is [here](https://torphix.github.io/blog/fastpages/jupyter/2022/01/24/Fastspeech.html)
 # Setup
 
 - Git clone this repository, cd into folder and create conda env with `conda env create -f conda_env.yml`
