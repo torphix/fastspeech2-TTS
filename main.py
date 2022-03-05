@@ -6,6 +6,7 @@ import argparse
 from fastspeech2.data.preprocessing.align_dataset import align_corpus
 from fastspeech2.data.preprocessing.prepare_dataset import prepare_for_alignment
 from fastspeech2.data.preprocessing.create_dataset import CreateDataset
+from fastspeech2.export import onnx_export
 from fastspeech2.train import train
 from fastspeech2.inference import inference
 from fastspeech2.data.preprocessing.create_dataset import embed_speaker_for_processed_dataset
@@ -125,7 +126,10 @@ if __name__ == '__main__':
         [os.remove(os.path.abspath(f'output_wavs/{f}')) 
          for f in os.listdir('output_wavs')]
         
-    # elif command == 'onnx_export':
+    elif command == 'onnx_export':
+        parser.add_argument('--model_path', required=True)
+        args, leftover_args = parser.parse_known_args()
+        onnx_export(args.model_path)
         
         
     else:
