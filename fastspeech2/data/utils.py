@@ -1,5 +1,4 @@
 import torch
-from torch._C import device
 import torch.nn.functional as F
 
 def pad_1D(inputs, PAD=0):

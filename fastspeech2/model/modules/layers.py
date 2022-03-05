@@ -2,9 +2,10 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from fastspeech2.model.utils import pad
 
 # Custom Layers
-class PositionalEncoding(nn.Module):
+class CosinePositionalEncoding(nn.Module):
 
     def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
         super().__init__()
@@ -28,7 +29,22 @@ class PositionalEncoding(nn.Module):
         x = self.dropout(x)
         return x.permute(1, 0, 2).contiguous()
     
-    
+
+class PortaSpeechPositionalEncoding(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self, phonemes, words, 
+                word_boundries, word_durations):
+        # Phoneme pos encoding
+        for idx, phoneme in enumerate(phonemes):
+            ph_idxs = torch.nonzero(
+                         pad(torch.split(
+                             phoneme, word_boundries[idx], dim=0)))
+        # Word pos encoding
+        
+
+
 class ConvLayer(nn.Module):
     def __init__(self, 
                  in_d, 

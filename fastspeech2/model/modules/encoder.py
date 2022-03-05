@@ -1,6 +1,6 @@
 import torch.nn as nn
 from .transformer import FFTBlock
-from .layers import PositionalEncoding
+from .layers import CosinePositionalEncoding
 
 # Encoder  
 class Encoder(nn.Module):
@@ -8,7 +8,7 @@ class Encoder(nn.Module):
                  n_blocks=6, n_heads=8, k_size=3):
         super(Encoder, self).__init__()
         self.layers = nn.ModuleList()
-        self.positional_enc = PositionalEncoding(in_d)
+        self.positional_enc = CosinePositionalEncoding(in_d)
         
         for n in range(n_blocks):
             self.layers.append(

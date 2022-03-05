@@ -6,7 +6,7 @@ from .modules.postnet import Postnet
 from .modules.decoder import Decoder
 from .modules.adaptors import VarianceAdaptor
 from .modules.encoder import Encoder
-from .modules.layers import ConvLayer, PositionalEncoding
+from .modules.layers import ConvLayer, CosinePositionalEncoding
 
 class FastSpeech2(nn.Module):
     def __init__(self, model_config, audio_metadata):
@@ -18,7 +18,7 @@ class FastSpeech2(nn.Module):
         dropout = model_config['dropout']
         # Encoder
         self.phoneme_embedding = nn.Embedding(phoneme_d, emb_d, pad_idx)
-        self.positional_encoding = PositionalEncoding(emb_d)
+        self.positional_encoding = CosinePositionalEncoding(emb_d)
         self.encoder = Encoder(model_config['encoder']['in_d'],
                                model_config['encoder']['hid_d'], 
                                model_config['encoder']['out_d'],
@@ -41,14 +41,14 @@ class FastSpeech2(nn.Module):
         
     def forward(self, 
                 phonemes, 
+                duration_alpha=1.0,
+                pitch_alpha=1.0,
+                energy_alpha=1.0,
                 text_masks=None,
                 mel_masks=None,
                 true_pitch=None, 
                 true_energy=None, 
                 durations=None,
-                pitch_alpha=1.0,
-                energy_alpha=1.0,
-                duration_alpha=1.0,
                 speaker_embedding=None,
                 ):
         '''
@@ -78,7 +78,6 @@ class FastSpeech2(nn.Module):
         mel_preds = self.projection(mel_preds)            
         mel_preds = self.decoder(mel_preds, mel_masks)
         mel_postnet_pred = self.postnet(mel_preds) + mel_preds
-        
         return mel_postnet_pred, mel_preds, \
                 pitch_preds, energy_preds, log_duration_preds
 

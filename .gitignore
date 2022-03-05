@@ -1,10 +1,12 @@
 # Custom
+portaspeech
 raw_data/
 preprocessed_dataset/
 processed_dataset/
 checkpoints/
 .ipynb_checkpoints/
 output_wavs/
+saved_models/
 
 # Boilerplate
 # Byte-compiled / optimized / DLL files

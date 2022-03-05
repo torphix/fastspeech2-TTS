@@ -89,7 +89,7 @@ class CreateDataset():
             os.makedirs(f"{output_data_dir}/speaker_emb", exist_ok=True)
             
             data_points = []
-            for idx, tg_name in tqdm(enumerate(os.listdir(f'{tg_speaker_dir}'))):
+            for tg_name in tqdm(os.listdir(f'{tg_speaker_dir}')):
                 basename = tg_name.split(".")[0]
                 values = \
                     self.process_datapoint(wav_txt_dir, tg_speaker_dir, basename)
@@ -120,7 +120,6 @@ class CreateDataset():
                     'energy':energy_fname,
                     'pitch':pitch_fname,
                 })
-                if idx == 50: break
             with open(f'{output_data_dir}/{speaker}_data.json', 'w') as json_datafile:
                 json_datafile.write(json.dumps(
                     {

@@ -107,3 +107,7 @@ TRY: (If not working)
 
 1. min max scaling instead of mean std scaling as may converge better if values between 0 and 1
 2. With standard scaling make sure you compute metadata across entire dataset FIRST as this ensures your using the true mean and std not just the speaker mean and std
+
+TODO:
+
+- Vecotrise portaspeech pos encoding

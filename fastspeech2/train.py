@@ -56,4 +56,7 @@ def train(model_config, trainer_config, data_config):
         fs2_module,
         ckpt_path=ckpt_path)
     
+    # Save model 
     torch.save(trainer.model.state_dict(), f'fastspeech2/saved_models/fs2_model.pth.{datetime.utcnow()}.tar')
+
+

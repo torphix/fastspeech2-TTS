@@ -22,68 +22,7 @@ class ScaledDotProductAttention(nn.Module):
         return qkv, attn
 
 
-# class MultiHeadedAttention(nn.Module):
-#     def __init__(self, n_heads, in_d, val_d, key_d,
-#                  dropout=0.2):
-#         super().__init__()
-        
-#         self.val_d = val_d
-#         self.key_d = key_d
-#         self.n_heads = n_heads
-        
-#         self.dropout = nn.Dropout(dropout)
-#         self.layer_norm = nn.LayerNorm(in_d)
-        
-#         self.key_fc = nn.Linear(in_d, key_d*n_heads)
-#         self.value_fc = nn.Linear(in_d, val_d*n_heads)
-#         self.query_fc = nn.Linear(in_d, val_d*n_heads)
-        
-#         self.attention = ScaledDotProductAttention()        
-#         self.out_layer = nn.Linear(val_d*n_heads, in_d)
-    
-#     def _map_to_heads(self, x, src_d):
-#         # [BS, L, N*H] -> [BS*N, L, N]
-#         batch_size, x_len, x_d = x.shape
-#         x = x.view(batch_size, x_len, self.n_heads, src_d) \
-#              .permute(2, 0, 1, 3) \
-#              .contiguous() \
-#              .view(-1, x_len, src_d) 
-#         return x
-    
-#     def _map_from_heads(self, x, src_d):
-#         # [BS*H, L, N] -> [BS, L, N*H]
-#         batch_size, x_len, old_d = x.shape
-#         batch_size = batch_size // self.n_heads
-#         x = x.view(self.n_heads, batch_size, x_len, old_d) \
-#              .permute(1, 2, 0, 3) \
-#              .contiguous() \
-#              .view(batch_size, x_len, -1)
-#         return x
-                    
-        
-#     def forward(self, key, value, query, mask=None):
-#         '''
-#         x: [BS, L, N]
-#         '''
-#         residual = query
-        
-#         key = self._map_to_heads(self.key_fc(key), self.key_d)
-#         value = self._map_to_heads(self.value_fc(value), self.val_d)
-#         query = self._map_to_heads(self.query_fc(query), self.val_d)
 
-#         # Masks
-#         if mask is not None:
-#             max_len = key.shape[1]
-#             self_attn_mask = mask.unsqueeze(1).expand(-1, max_len, -1)
-#             self_attn_mask = self_attn_mask.repeat(self.n_heads, 1, 1)
-#         else: self_attn_mask = None
-
-#         out, attention_score = self.attention(key, value, query, self_attn_mask)
-#         out = self._map_from_heads(out, self.val_d)
-#         out = self.out_layer(out)
-#         out = self.layer_norm(out+residual) 
-#         return out, attention_score  
-    
 class MultiHeadedAttention(nn.Module):
     """ Multi-Head Attention module """
     def __init__(self, n_head, d_model, d_k, d_v, dropout=0.1):

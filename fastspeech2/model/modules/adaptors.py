@@ -2,14 +2,59 @@ import enum
 import json
 import torch
 import math
-import numpy as np
 from ...data.utils import pad
 import torch.nn as nn
 import torch.nn.functional as F
 from .layers import ConvLayer
 
 
-
+# class LengthRegulator(nn.Module):
+#     '''
+#     Inputs:
+#         - Phonemes: [BS, L, N]
+#         - Durations: [BS, eL] 
+#         eL values = ints specifying how much to expand by
+#         eL values should equal L
+#         - max_len: mels get cropped to this value
+#     Ouptuts:
+#         - Phonemes: [BS, L*eL, N]
+#         - mel_lens: [BS] BS = length of each mel without padding
+#     '''
+#     def __init__(self, onnx_export=False):
+#         super(LengthRegulator, self).__init__()
+        
+#         self.onnx_export = onnx_export
+        
+#     def forward(self, x, durations, duration_alpha=1.0):
+#         # Preprocess durations
+#         if self.training:
+#             durations = torch.clamp(
+#                     (torch.round((durations*duration_alpha).float())), min=0)
+#         else: # Inference, convert from log
+#             durations = torch.clamp(
+#                 (torch.round(torch.exp(durations) - 1) * duration_alpha), min=0)
+#         # Expand
+#         mel_lens, expanded = [], []
+#         for idx, batch in enumerate(x):
+#             duration = durations[idx]
+#             # Use non vectorised if onnx export
+#             if self.onnx_export:
+#                 expanded_rows = []
+#                 for idx, row in enumerate(batch):
+#                     row_dur = duration[idx]
+#                     new_row = row.unsqueeze(0).repeat(int(row_dur.item()), 1)
+#                     expanded_rows.append(new_row)                            
+#                 expanded.append(torch.cat(expanded_rows, dim=0))
+#                 mel_lens.append(torch.sum(duration))
+#             # Use vectorised version when training / non onnx inference
+#             else:  
+#                 expanded.append(torch.repeat_interleave(batch, duration.long(), dim=0))
+#                 mel_lens.append(torch.sum(duration))
+            
+#         expanded = pad(expanded)
+#         mel_lens = torch.tensor(mel_lens)
+#         return expanded, mel_lens
+     
 class LengthRegulator(nn.Module):
     '''
     Inputs:
@@ -22,7 +67,7 @@ class LengthRegulator(nn.Module):
         - Phonemes: [BS, L*eL, N]
         - mel_lens: [BS] BS = length of each mel without padding
     '''
-    def __init__(self):
+    def __init__(self, onnx_export=False):
         super(LengthRegulator, self).__init__()
         
     def forward(self, x, durations, duration_alpha=1.0):
@@ -55,10 +100,10 @@ class Predictor(nn.Module):
             nn.LayerNorm(hid_d),
             nn.Dropout(dropout),
             # # L2
-            # ConvLayer(hid_d, hid_d, k_size),
-            # nn.ReLU(),
-            # # nn.LayerNorm(hid_d),
-            # nn.Dropout(dropout),
+            ConvLayer(hid_d, hid_d, k_size),
+            nn.ReLU(),
+            # nn.LayerNorm(hid_d),
+            nn.Dropout(dropout),
             # L3
             ConvLayer(hid_d, out_d, k_size),
             nn.ReLU(),
@@ -98,7 +143,7 @@ class VarianceAdaptor(nn.Module):
         self.duration_predictor = Predictor(in_d, hid_d, out_d, k_size)
         self.pitch_predictor = Predictor(in_d, hid_d, out_d, k_size)
         self.energy_predictor = Predictor(in_d, hid_d, out_d, k_size)
-        self.length_regulator = LengthRegulator()
+        self.length_regulator = LengthRegulator(variance_config['onnx_export'])
         
         # Quantization
         pitch_min, pitch_max = audio_metadata['pitch']['min'], audio_metadata['pitch']['max']
@@ -113,7 +158,7 @@ class VarianceAdaptor(nn.Module):
                           min_v, max_v, n_bins, emb_in_d):
         if quantization_type == 'log':
             bins = nn.Parameter(
-                torch.exp(torch.linspace(np.log(min_v), np.log(max_v), n_bins -1)),
+                torch.exp(torch.linspace(torch.log(min_v), torch.log(max_v), n_bins -1)),
                 requires_grad=False)
         elif quantization_type == 'linear': 
             bins = nn.Parameter(
@@ -121,16 +166,22 @@ class VarianceAdaptor(nn.Module):
                 requires_grad=False)
         embedding = nn.Embedding(n_bins, emb_in_d)
         return bins, embedding
+    
+    def bucketize(self, tensor, bucket_boundaries):
+        result = torch.zeros_like(tensor, dtype=torch.int32)
+        for boundary in bucket_boundaries:
+            result += (tensor > boundary).int()
+        return result.long()
         
     def embed_pitch(self, x, ground_truth, alpha, mask=None):
         pitch_preds = self.pitch_predictor(x, mask)
         if ground_truth is None: # Inference
             pitch_preds = pitch_preds * alpha
             embedding = self.pitch_embedding(
-                torch.bucketize(pitch_preds, self.pitch_bins))
+                self.bucketize(pitch_preds, self.pitch_bins))
         else: # Training
             embedding = self.pitch_embedding(
-                torch.bucketize(ground_truth, self.pitch_bins))
+                self.bucketize(ground_truth, self.pitch_bins))
         return pitch_preds, embedding
 
     def embed_energy(self, x, ground_truth, alpha, mask=None):
@@ -138,10 +189,10 @@ class VarianceAdaptor(nn.Module):
         if ground_truth is None: # Inference
             energy_preds = energy_preds * alpha
             embedding = self.energy_embedding(
-                torch.bucketize(energy_preds, self.energy_bins))
+                self.bucketize(energy_preds, self.energy_bins))
         else: # Training
             embedding = self.energy_embedding(
-                torch.bucketize(ground_truth, self.energy_bins))
+                self.bucketize(ground_truth, self.energy_bins))
         return energy_preds, embedding
     
     def forward(self, phonemes, 

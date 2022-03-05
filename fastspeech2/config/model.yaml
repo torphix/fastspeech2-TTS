@@ -19,7 +19,7 @@ model:
   pad_idx: 0
   phoneme_dict_size: 360
   postnet:
-    n_layers: 6
+    n_layers: 7
   variance_config:
     energy_feature_level: phoneme_frame
     hid_d: 512
@@ -30,7 +30,7 @@ model:
     out_d: 256
     pitch_feature_level: phoneme_frame
     quantization_type: linear
-
+    onnx_export: false
 speaker_embedding:
   preprocess: False
   embed: True # True if multispeakers
@@ -39,7 +39,7 @@ speaker_embedding:
   config_path: speaker_encoder/pretrained_model/config.json
 
 dataloader:
-  batch_size: 8
+  batch_size: 6
   num_workers: 4
   shuffle: True
   pin_memory: False

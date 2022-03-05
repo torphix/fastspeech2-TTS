@@ -125,6 +125,9 @@ if __name__ == '__main__':
         [os.remove(os.path.abspath(f'output_wavs/{f}')) 
          for f in os.listdir('output_wavs')]
         
+    # elif command == 'onnx_export':
+        
+        
     else:
         print(f'''
               Command "{command}" not recognized, options are:
