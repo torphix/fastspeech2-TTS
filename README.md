@@ -68,3 +68,5 @@ Biggest lessons to learn IMO:
 
 12. Ensure data is correct and normalised between [-1,1]
 
+### Open issue if you find a problem / desired added feature
+This is a work in progress and updates will be added between my other projects
