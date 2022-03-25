@@ -10,8 +10,6 @@
 
 # Training
 
-You can use the notebook provided as TTS.ipynb in the root folder or alternativly use the command line.
-
 - Command line:
 
 One helper method is provided that will download, prepare, align and create dataset all in one go: `python main.py fs2_make_dataset --dataset {$NAME_OF_DATASET}` alternatively you can run the individual methods.
