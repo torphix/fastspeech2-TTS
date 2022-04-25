@@ -82,7 +82,8 @@ if __name__ == '__main__':
         trainer_config = f'fastspeech2/config/trainer.yaml'
         train(model_config, 
                 trainer_config, 
-                data_config)
+                data_config,
+                args.ckpt_path)
         
     elif command == 'inference':
         parser.add_argument('--text', required=True,

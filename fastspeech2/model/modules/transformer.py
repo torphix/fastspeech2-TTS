@@ -90,10 +90,11 @@ class FFTBlock(nn.Module):
         self.attention = MultiHeadedAttention(n_heads, in_d, in_d, in_d)
         self.post_layers = nn.Sequential(
             ConvLayer(in_d, hid_d, kernel),
+            nn.LayerNorm(hid_d),
             nn.ReLU(),
             ConvLayer(hid_d, out_d, kernel),
+            nn.LayerNorm(out_d),
             nn.Dropout(dropout))    
-        self.layer_norm = nn.LayerNorm(out_d)  
         
     def apply_pad_mask(self, x, mask=None):
         if mask is not None:
@@ -104,8 +105,7 @@ class FFTBlock(nn.Module):
         # [BS, L, N]
         out, attention_score = self.attention(x, x, x, mask)
         out = self.apply_pad_mask(out, mask)
-        residual = out
-        out = self.post_layers(out)
-        out = self.layer_norm(residual + out)
+        residual = out.clone()
+        out = self.post_layers(out) + residual
         out = self.apply_pad_mask(out, mask)
         return out, attention_score

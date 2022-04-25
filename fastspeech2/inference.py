@@ -9,6 +9,7 @@ from g2p_en import G2p
 from scipy.io import wavfile
 from natsort import natsorted
 from string import punctuation
+from fastspeech2.model.utils import plot_mel
 from vocoder.api import get_vocoder, vocoder_infer
 from fastspeech2.model.fastspeech2 import FastSpeech2
 from .data.preprocessing.text import text_to_sequence
@@ -87,10 +88,10 @@ def inference(text,
         
         with open(model_config, 'r') as f:
             model_config = yaml.loader(f.read(), Loader=yaml.FullLoader)
-        fs2 = FastSpeech2.load_state_dict(
-            torch.load(''), 
+        fs2 = FastSpeech2(
             open_config(model_config), 
             audio_metadata)
+    fs2.load_state_dict(torch.load(model_path))
     # Inference
     with torch.no_grad():
         fs2.eval()
@@ -102,6 +103,7 @@ def inference(text,
         
     mel_postnet, mel_preds, pitch_preds, energy_preds, log_duration_preds = output 
     mel_postnet = mel_postnet.transpose(1,2)
+    plot_mel(mel_postnet.cpu().numpy(), ['out'])
     vocoder = get_vocoder(device)
     wav = vocoder_infer(mel_postnet, vocoder)[0]
     wavfile.write('output.wav', 22050, wav.squeeze(0))

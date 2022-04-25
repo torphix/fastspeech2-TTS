@@ -38,6 +38,7 @@ class FS2Dataset(Dataset):
         }
         '''
         datapoint = self.data[idx]
+        datapoint['raw_text'] = self.data[idx]['raw_text']
         datapoint['duration'] = torch.tensor(
             np.load(f"{self.root_dir}/{datapoint['duration']}"))
         datapoint['pitch'] = torch.tensor(
@@ -66,7 +67,9 @@ def collate_fn(batch):
     text_lens = []
     mel_lens = []
     speakers = []
+    raw_texts = []
     for item in batch:
+        raw_texts.append(item['raw_text'])
         durations.append(item['duration'])
         pitchs.append(item['pitch'])
         energys.append(item['energy'])
@@ -85,6 +88,7 @@ def collate_fn(batch):
         'mel_lens': torch.tensor(mel_lens),
         'text_max_len':max(text_lens),
         'mel_max_len':max(mel_lens),
+        'raw_text': raw_texts,
         }
     if speakers[0] is not None:
         batch['speakers'] = torch.tensor(speakers) 

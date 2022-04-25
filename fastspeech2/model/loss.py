@@ -58,16 +58,11 @@ class FastSpeech2Loss(nn.Module):
             mel_targets = mel_targets.transpose(1,2)
              
         mel_targets = mel_targets.masked_select(mel_mask.unsqueeze(-1))
-        
+    
         mel_postnet_loss = self.mae_loss(mel_postnet, mel_targets.float())
         mel_loss = self.mae_loss(mel_preds, mel_targets.float())
         pitch_loss = self.mse_loss(pitch_preds, pitch_targets.float())
         energy_loss = self.mse_loss(energy_preds, energy_targets.float())
-        
-        durations_preds = torch.clamp(
-                (torch.round(torch.exp(log_duration_preds) - 1) * 1), min=0)
-        durations_targets = torch.clamp(
-                (torch.round(torch.exp(log_duration_preds) - 1) * 1), min=0)
         
         duration_loss = self.mse_loss(log_duration_preds, log_duration_targets)
         

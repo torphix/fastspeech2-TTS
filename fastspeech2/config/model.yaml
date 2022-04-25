@@ -30,7 +30,7 @@ model:
     out_d: 256
     pitch_feature_level: phoneme_frame
     quantization_type: linear
-    onnx_export: falsew
+    onnx_export: false
 speaker_embedding:
   preprocess: False
   embed: True # True if multispeakers
@@ -39,7 +39,7 @@ speaker_embedding:
   config_path: speaker_encoder/pretrained_model/config.json
 
 dataloader:
-  batch_size: 6
+  batch_size: 4
   num_workers: 4
   shuffle: True
   pin_memory: False

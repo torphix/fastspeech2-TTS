@@ -120,7 +120,7 @@ class CreateDataset():
                     'energy':energy_fname,
                     'pitch':pitch_fname,
                 })
-                # if idx == 24: break
+                if idx == 24: break
             with open(f'{output_data_dir}/{speaker}_data.json', 'w') as json_datafile:
                 json_datafile.write(json.dumps(
                     {
@@ -217,6 +217,18 @@ class CreateDataset():
             min_v = min(min_v, min(values.reshape(-1,1)))
         return min_v.item(), max_v.item()
     
+    # def normalize(self, in_dir, mean, std):
+    #     max_value = np.finfo(np.float64).min
+    #     min_value = np.finfo(np.float64).max
+    #     for filename in os.listdir(in_dir):
+    #         filename = os.path.join(in_dir, filename)
+    #         values = (np.load(filename) - mean) / std
+    #         np.save(filename, values)
+
+    #         max_value = max(max_value, max(values))
+    #         min_value = min(min_value, min(values))
+
+    #     return min_value.item(), max_value.item()
     
     def process_datapoint(self, wav_txt_dir, tg_speaker_dir, basename):
         wav_path = f"{wav_txt_dir}/{basename}.wav"

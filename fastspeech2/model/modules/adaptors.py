@@ -138,10 +138,10 @@ class VarianceAdaptor(nn.Module):
         if ground_truth is None: # Inference
             pitch_preds = pitch_preds * alpha
             embedding = self.pitch_embedding(
-                self.bucketize(pitch_preds, self.pitch_bins))
+                torch.bucketize(pitch_preds, self.pitch_bins))
         else: # Training
             embedding = self.pitch_embedding(
-                self.bucketize(ground_truth, self.pitch_bins))
+                torch.bucketize(ground_truth, self.pitch_bins))
         return pitch_preds, embedding
 
     def embed_energy(self, x, ground_truth, alpha, mask=None):

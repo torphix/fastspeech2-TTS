@@ -41,8 +41,7 @@ Alternativly you can run each seperate command for a granular understanding of t
 
 # Inference
 
-Checkpoint can be found: [here](https://drive.google.com/file/d/1dcIFZCn1aRu46dX1lfa3CDzoM0D-3VJ0/view?usp=sharing)
-Audio generated is understandable but not excellent, further training and expansion of the model capacity should equate to better results.
+- 
 
 # Lessons learnt from reading paper & building model
 1. Finetuning different regions of the network to different tasks is a good way to increase time to convergance

@@ -1,11 +1,9 @@
-import os
 import yaml
 import torch
-import json
 import pytorch_lightning as ptl
 from .loss import FastSpeech2Loss
 from .fastspeech2 import FastSpeech2
-from .utils import get_mask_from_lengths
+from .utils import get_mask_from_lengths, plot_mel
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 class FS2TrainingModule(ptl.LightningModule):
@@ -62,7 +60,7 @@ class FS2TrainingModule(ptl.LightningModule):
          mel_masks,
          mel_lens,
          speakers) = self.unpack_batch(batch)
-            
+        print(torch.max(mels), torch.max(energies))
         output = self.forward(phonemes=text,
                               durations=durations,
                               energy=energies,
@@ -72,6 +70,9 @@ class FS2TrainingModule(ptl.LightningModule):
                               mels=mels,
                               mel_lens=mel_lens,
                               speaker_emb=speakers)
+        test = output[0].clone().transpose(1,2).detach().cpu().numpy()
+        print(batch['raw_text'])
+        plot_mel(test, ['Ouptut'])
         
         loss = self.loss(output, 
                          (mels, pitchs, energies, durations),
@@ -117,7 +118,7 @@ class FS2TrainingModule(ptl.LightningModule):
         return loss
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=2e-4)
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return {'optimizer':optimizer,
                 'scheduler': ReduceLROnPlateau(optimizer)}
     
