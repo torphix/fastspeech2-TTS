@@ -6,17 +6,23 @@
 - Accompanying blog post on things I'v learnt implementing this paper is [here](https://torphix.github.io/blog/fastpages/jupyter/2022/01/24/Fastspeech.html)
 # Setup
 
-- Git clone this repository, cd into folder and create conda env with `conda env create -f conda_env.yml`
+- Git clone this repository, cd into folder and create conda env with `conda env create -f conda_env.yaml`
+- Initialise environment with `conda activate tts_fs2`
 
 # Training
+Note: all hyperparameters such as save locations, model features and data features can be modified by editing the files under fastspeech2/config
+Defaults will suffice for testing, but if working with custom data worth having a look.
 
-- Command line:
+## Data preparation
 
-One helper method is provided that will download, prepare, align and create dataset all in one go: `python main.py fs2_make_dataset --dataset {$NAME_OF_DATASET}` alternatively you can run the individual methods.
+### Option 1: Single Command Data processing pipeline
+One helper method is provided that will download, prepare, align and create dataset all in one go: (Currently only [LJSpeech](https://keithito.com/LJ-Speech-Dataset/) dataset is supported)
+ `python main.py fs2_make_dataset --dataset LJSpeech` 
 
+### Option 2: Multi command data processing pipeline
+Alternativly you can run each seperate command for a granular understanding of the data processing pipeline:
 1. Download & extract dataset with command `python main.py download_dataset --dataset LJSpeech` (currently only LJSpeech supported)
 2. Prepare dataset with command `python main.py fs2_prepare_dataset --dataset LJSpeech` or edit config file under fastspeech2/config/data.yaml
-
    - To use with your own dataset write a custom function under `fastspeech2/data/database/preprocessing/prepare_dataset.py`
    - Ensure that the folder structure is as such:
      - database
@@ -25,25 +31,28 @@ One helper method is provided that will download, prepare, align and create data
          - {speaker_id} (even if single speaker dataset)
            - .lab, .wav utterance pairs
 
-3. Extract alignment from dataset with command `python main.py fs2_align_dataset` usually several error messages will appear but the alignment should work check database folder if unsure
-4. Create dataset with command `python main.py fs2_create_dataset`
-5. Train with command `python main.py fs2_train` after training models are saved to fastspeech2/saved_models and checkpoints are saved to checkpoints/fs2, provide the checkpoint path in config/trainer.yaml to resume training from checkpoint
-   Configure the model and trainer parameters in config directory
+3. Extract alignment from dataset with command `python main.py fs2_align_dataset` usually several error messages (due to lib used for aligning unfortunately nothing I can do about it) will appear but the alignment should work check database folder if unsure
+4. Create dataset with command `python main.py fs2_create_dataset` this will preprocess the data by extracting audio features, phoneme durations and saving as pickled arrays for speedy loading during training.
+
+## Training
+- Train with command `python main.py fs2_train` after training models are saved to fastspeech2/saved_models and checkpoints are saved to checkpoints/fs2, provide the checkpoint path in config/trainer.yaml to resume training from checkpoint configure the model and trainer parameters in config directory
+- To load training from checkpoint for finetuning or other use case either specify checkpoint path in config/trainer.yaml or use command
+`python main.py fs2_train --ckpt_path={path/to/saved_checkpoint}`
 
 # Inference
 
 Checkpoint can be found: [here](https://drive.google.com/file/d/1dcIFZCn1aRu46dX1lfa3CDzoM0D-3VJ0/view?usp=sharing)
 Audio generated is understandable but not excellent, further training and expansion of the model capacity should equate to better results.
 
+# Lessons learnt from reading paper & building model
 1. Finetuning different regions of the network to different tasks is a good way to increase time to convergance
+  - FS2 has some modules learn pitch others energy and duration, I like to think of it like different regions of the brain specialising to various tasks
 2. Need to mask padded tensors for convergance
-3. If model is not converging, see if loss reduces when replacing a particular module eg: transformer with plain convs,
-   if so this indicates that the module is broken
-4. Careful where you put activation functions, as can prevent convergance! or hit an asympotote much quicker
-5. Adding residuals makes a big difference in minimum loss achievable, Using res in transformer causes loss asymptomte to reduce by half
-6. LR effects different parts of then network, mel will converge at LR of 1e-3 whilst duration wont converge unless its at 1e-4
-    pitch wont converge unless at 1e-4 and energy will converge at 1e-3,
-7. Dropout is also important, all regularization techniques is important
+  - My inital padding function was incorrect resulting in much wasted time and compute
+3. Careful where you put activation functions, as can prevent convergance! or hit an asympotote much quicker
+4. Adding residuals makes a big difference in minimum loss achievable, Using residuals in transformers causes loss asymptomte to reduce by half
+5. Important to visualise and check all inputs and outputs of the model to ensure correct data is being fed to your model
+6. Regularisation is extremely important, use residuals, dropout, gradient clipping and any other techniques necessary.
 ### Data
 1. Build clean datapipelines
     Messy data -> Standardize to same format -> generate dataset -> input into model

@@ -20,21 +20,19 @@ class LengthRegulator(nn.Module):
     Inputs:
         - Phonemes: [BS, L, N]
         - Durations: [BS, eL] 
-        eL values = ints specifying how much to expand by
+        eL values = int specifying how much to expand by, already alpha scaled
         eL values should equal L
         - max_len: mels get cropped to this value
     Ouptuts:
         - Phonemes: [BS, L*eL, N]
         - mel_lens: [BS] BS = length of each mel without padding
     '''
-    def __init__(self, onnx_export=True):
+    def __init__(self, onnx_export=False):
         super(LengthRegulator, self).__init__()
-        
-        self.onnx_export = onnx_export
         
     def forward(self, x, durations, duration_alpha=1.0):
         # Preprocess durations
-        if self.training:
+        if isinstance(durations[0][0].item(), int):
             durations = torch.clamp(
                     (torch.round((durations*duration_alpha).float())), min=0)
         else: # Inference, convert from log
@@ -44,56 +42,11 @@ class LengthRegulator(nn.Module):
         mel_lens, expanded = [], []
         for idx, batch in enumerate(x):
             duration = durations[idx]
-            # Use non vectorised if onnx export
-            # if self.onnx_export:
-            expanded_rows = []
-            for idx, row in enumerate(batch):
-                row_dur = duration[idx]
-                new_row = row.unsqueeze(0).repeat(row_dur.int(), 1)
-                expanded_rows.append(new_row)                            
-            expanded.append(torch.cat(expanded_rows, dim=0))
+            expanded.append(torch.repeat_interleave(batch, duration.long(), dim=0))
             mel_lens.append(torch.sum(duration))
-            # Use vectorised version when training / non onnx inference
-            # else:  
-            #     expanded.append(torch.repeat_interleave(batch, duration.long(), dim=0))
-            #     mel_lens.append(torch.sum(duration))
-            
         expanded = pad(expanded)
-        mel_lens = torch.stack(mel_lens)
+        mel_lens = torch.tensor(mel_lens)
         return expanded, mel_lens
-     
-# class LengthRegulator(nn.Module):
-#     '''
-#     Inputs:
-#         - Phonemes: [BS, L, N]
-#         - Durations: [BS, eL] 
-#         eL values = int specifying how much to expand by, already alpha scaled
-#         eL values should equal L
-#         - max_len: mels get cropped to this value
-#     Ouptuts:
-#         - Phonemes: [BS, L*eL, N]
-#         - mel_lens: [BS] BS = length of each mel without padding
-#     '''
-#     def __init__(self, onnx_export=False):
-#         super(LengthRegulator, self).__init__()
-        
-#     def forward(self, x, durations, duration_alpha=1.0):
-#         # Preprocess durations
-#         if isinstance(durations[0][0].item(), int):
-#             durations = torch.clamp(
-#                     (torch.round((durations*duration_alpha).float())), min=0)
-#         else: # Inference, convert from log
-#             durations = torch.clamp(
-#                 (torch.round(torch.exp(durations) - 1) * duration_alpha), min=0)
-#         # Expand
-#         mel_lens, expanded = [], []
-#         for idx, batch in enumerate(x):
-#             duration = durations[idx]
-#             expanded.append(torch.repeat_interleave(batch, duration.long(), dim=0))
-#             mel_lens.append(torch.sum(duration))
-#         expanded = pad(expanded)
-#         mel_lens = torch.tensor(mel_lens)
-#         return expanded, mel_lens
             
 
 class Predictor(nn.Module):

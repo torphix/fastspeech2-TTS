@@ -30,7 +30,7 @@ model:
     out_d: 256
     pitch_feature_level: phoneme_frame
     quantization_type: linear
-    onnx_export: false
+    onnx_export: falsew
 speaker_embedding:
   preprocess: False
   embed: True # True if multispeakers

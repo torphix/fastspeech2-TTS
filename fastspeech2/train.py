@@ -1,16 +1,17 @@
 import os
 import yaml
-import torch
 import json
-from datetime import datetime
+import time
+import torch
+import logging
 import pytorch_lightning as ptl
 from .data.data import get_dataloaders
 from .model.ptl_module import FS2TrainingModule
 from pytorch_lightning.loggers import TensorBoardLogger
 
+logger = logging.getLogger()
 
-
-def train(model_config, trainer_config, data_config):
+def train(model_config, trainer_config, data_config, ckpt_path=None):
     # Load configs
     with open(model_config) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
@@ -18,6 +19,9 @@ def train(model_config, trainer_config, data_config):
         trainer_config = yaml.load(f, Loader=yaml.FullLoader)
     with open(data_config) as f:
         data_config = yaml.load(f, Loader=yaml.FullLoader)
+    if ckpt_path is not None:
+        logger.info(f'Loading Checkpoint from {ckpt_path}')
+        trainer_config['ckpt_path'] = ckpt_path
     # Get data
     train_paths = []        
     rootdir = f'{data_config["dataset_dir"]}/{data_config["dataset"]}/processed_dataset'
@@ -27,7 +31,6 @@ def train(model_config, trainer_config, data_config):
                 if file == f'{speaker_file}_data.json':
                     train_paths.append(
                         os.path.abspath(f'{rootdir}/{speaker_file}/{file}'))
-            
     # Get dataloaders
     train_dl, val_dl = get_dataloaders(
                         train_paths, 
@@ -57,6 +60,8 @@ def train(model_config, trainer_config, data_config):
         ckpt_path=ckpt_path)
     
     # Save model 
-    torch.save(trainer.model.state_dict(), f'fastspeech2/saved_models/fs2_model.pth.{datetime.utcnow()}.tar')
+    os.makedirs(f'fastspeech2/trained_models/',exist_ok=True)
+    torch.save(trainer.model.state_dict(),
+               f'fastspeech2/trained_models/fs2_model.{int(time.time())}.pth.tar')
 
 

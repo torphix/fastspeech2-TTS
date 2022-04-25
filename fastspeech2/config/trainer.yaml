@@ -1,6 +1,6 @@
 devices: 1
-max_epochs: 100
-min_epochs: 100
+max_epochs: 1
+min_epochs: 1
 auto_lr_find: True
 # auto_scale_batch_size: "binsearch"
 check_val_every_n_epoch: 2

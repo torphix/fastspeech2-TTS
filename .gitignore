@@ -6,8 +6,10 @@ processed_dataset/
 checkpoints/
 .ipynb_checkpoints/
 output_wavs/
-saved_models/
-
+trained_models/
+*.pth
+*.tar
+*.bz2
 # Boilerplate
 # Byte-compiled / optimized / DLL files
 __pycache__/
