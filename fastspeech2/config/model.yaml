@@ -40,7 +40,7 @@ speaker_embedding:
 
 dataloader:
   batch_size: 4
-  num_workers: 4
+  num_workers: 2
   shuffle: True
   pin_memory: False
-  split: [95, 5]
+  split: [99, 1]

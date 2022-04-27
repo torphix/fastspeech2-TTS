@@ -1,5 +1,6 @@
 '''Creates output JSON file where each entry is a datapoint'''
 import os
+import shutil
 import tgt
 import yaml
 import torch
@@ -37,9 +38,9 @@ class CreateDataset():
         self.win_length = config['audio']['win_length']
         self.min_level_db = config['audio']['min_level_db']
         self.max_wav_value = config["audio"]["max_wav_value"]
-        self.normalization_type = config['audio']['norm_type']
-        assert self.normalization_type in ['min_max', 'mean_std'], \
-             'Normalization min_max or mean_std (scalar) supported'
+        self.normalisation_type = config['audio']['norm_type']
+        assert self.normalisation_type in ['min_max', 'mean_std'], \
+             'normalisation min_max or mean_std (scalar) supported'
         # Averaging
         self.pitch_feature_level = config['audio']['pitch_feature_level']
         self.energy_feature_level = config['audio']['energy_feature_level']
@@ -48,33 +49,20 @@ class CreateDataset():
         assert self.energy_feature_level in ['mel_frame', 'phoneme_frame'], \
             'Feature level for energy must be mel_frame or phoneme_frame'
             
-        # Normalizations
-        self.pitch_normalization = config["audio"]["normalization"]
-        self.energy_normalization = config["audio"]["normalization"]
+        # normalisations
+        self.pitch_normalisation = config["audio"]["normalisation"]
+        self.energy_normalisation = config["audio"]["normalisation"]
         # STFT && Mel
         self.STFT = TacotronSTFT(
             self.n_fft, self.hop_length, 
             self.win_length, self.n_mels, 
             self.sampling_rate, self.f_min, self.f_max)
-        
-        if self.config['speaker_embedding']['embed']:
-            print('Speaker Embedding set to true, will take longer to process dataset..')
-            # Speaker Embedding
-            from speaker_encoder.compute_embedding import SpeechEmbedding
-            from .utils import load_speaker_encoder_config
-            # Load model
-            speaker_embedding_config = load_speaker_encoder_config(
-                self.config['speaker_embedding']['config_path'])
-            
-            self.speech_emb = SpeechEmbedding(
-                speaker_embedding_config, 
-                self.config['speaker_embedding']['model_path'])
+
         
 
     def process_aligned_corpus(self):
-        self.pitch_scaler = StandardScaler()
-        self.energy_scaler = StandardScaler()
-        self.mel_scaler = StandardScaler()
+        pitch_scaler = StandardScaler()
+        energy_scaler = StandardScaler()
         
         for speaker in tqdm(os.listdir(self.input_data_dir)):
             
@@ -82,6 +70,7 @@ class CreateDataset():
             tg_speaker_dir = f"{self.input_data_dir}/{speaker}/TextGrid"
             
             output_data_dir = f'{self.output_data_dir}/{speaker}'
+            shutil.rmtree(output_data_dir)
             os.makedirs(f"{output_data_dir}/duration", exist_ok=True)
             os.makedirs(f"{output_data_dir}/pitch", exist_ok=True)
             os.makedirs(f"{output_data_dir}/energy", exist_ok=True)
@@ -111,6 +100,15 @@ class CreateDataset():
                 mel_fname = f"mel/{basename}-mel.npy"
                 np.save(f'{output_data_dir}/{mel_fname}', mel)
                 
+                
+                if len(pitch) > 0: 
+                    pitch = self.remove_outlier(pitch)
+                    pitch_scaler.partial_fit(pitch.reshape((-1,1)))
+                if len(energy) > 0:
+                    energy = self.remove_outlier(energy)
+                    energy_scaler.partial_fit(energy.reshape((-1,1)))
+                
+                
                 data_points.append({
                     'id':basename,
                     'phonemes':phonemes,
@@ -120,44 +118,21 @@ class CreateDataset():
                     'energy':energy_fname,
                     'pitch':pitch_fname,
                 })
-                if idx == 24: break
+                # if idx == 20: break
             with open(f'{output_data_dir}/{speaker}_data.json', 'w') as json_datafile:
                 json_datafile.write(json.dumps(
                     {
                         'root':output_data_dir,
                         'data':data_points
                     }))
-                
-            self.compute_metadata(output_data_dir)
-            print("Dataset creation complete!")
-        self.compute_all_metadata(self.output_data_dir)
-        print('Metadata for entire dataset calculated')
-        print('Dataset creation completed.')
         
-    def compute_all_metadata(self, root_dir):
-        '''
-        Computes metadata across all folders, saves to yaml 
-        then normalizes the data across all files
-        '''
-        pitch_mean, pitch_std = self.pitch_scaler.mean_[0], self.pitch_scaler.scale_[0]
-        energy_mean, energy_std = self.energy_scaler.mean_[0], self.energy_scaler.scale_[0]
-        mel_mean, mel_std = self.mel_scaler.mean_[0], self.mel_scaler.scale_[0]
-
-        # Normalize
-        print('Normalizing data...')
-        for speaker in tqdm(os.listdir(f'{root_dir}')):
-            if speaker == 'all_metadata.json': continue
-            print('Normalizing Energy')
-            energy_min, energy_max = self.normalize(
-                f'{root_dir}/{speaker}/energy',
-                energy_mean,
-                energy_std)
-            print('Normalizing Pitch')
-            pitch_min, pitch_max = self.normalize(
-                    f'{root_dir}/{speaker}/pitch',
-                    pitch_mean,
-                    pitch_std)
-        with open(f'{root_dir}/all_metadata.json', 'w') as f:
+        print('Normalising data')
+        pitch_mean, pitch_std = pitch_scaler.mean_[0], pitch_scaler.scale_[0]
+        energy_mean, energy_std = energy_scaler.mean_[0], energy_scaler.scale_[0]
+        pitch_min, pitch_max = self.normalize(f'{output_data_dir}/pitch/', pitch_mean, pitch_std)
+        energy_min, energy_max = self.normalize(f'{output_data_dir}/energy/', energy_mean, energy_std)
+        print('Saving meta-data')
+        with open(f'{output_data_dir}/all_metadata.json', 'w') as f:
            f.write(json.dumps(
                 {
                 'pitch':{
@@ -172,63 +147,32 @@ class CreateDataset():
                         'mean':energy_mean.astype(float),
                         'std':energy_std.astype(float),
                     },
-                'mel':{
-                        # 'max': mel_max.astype(float),
-                        # 'min': mel_min.astype(float),
-                        'mean':mel_mean.astype(float),
-                        'std':mel_std.astype(float),
-                    },
                 }
             ))
-        print('Data normalization complete!')
+        # Would average over all speakers here if doing multi tts
+        shutil.copyfile(f'{output_data_dir}/all_metadata.json',
+                        f'{self.output_data_dir}/all_metadata.json')
+        print('Data normalisation complete!')
                 
-    def compute_metadata(self, in_dir):
-        '''Computes metadata for each speaker and updates global values'''
-        print('Creating Metadata...')
-        # Normalizes saved pitch & energy numpy files
-        print('Normalizing pitch & energy files...')
-        # Standard scaler norm
-        self.update_data_values(f"{in_dir}/pitch", 'pitch')
-        self.update_data_values(f"{in_dir}/energy", 'energy')
-        self.update_data_values(f"{in_dir}/mel", 'mel')
-
-    def update_data_values(self, in_dir, name):
-        for filename in os.listdir(in_dir):
-            filename = os.path.join(in_dir, filename)
-            values = np.load(filename)
-            if name == 'pitch':
-                self.pitch_scaler.partial_fit(values.reshape(-1, 1))
-            elif name == 'energy':
-                self.energy_scaler.partial_fit(values.reshape(-1, 1))
-            elif name == 'mel':
-                self.mel_scaler.partial_fit(values.reshape(-1, 1))
-        
     def normalize(self, in_file, mean, std):
         max_v = np.finfo(np.float64).min
         min_v = np.finfo(np.float64).max
         for file in tqdm(os.listdir(in_file)):
             values = np.load(f'{in_file}/{file}')
-            if self.normalization_type == 'mean_std':
-                values = (values - mean) / std
-            elif self.normalization_type == 'min_max':
-                values = (values - min_v) / (max_v - min_v)
+            values = (values - mean) / std
             np.save(f'{in_file}/{file}', values)
-            max_v = max(max_v, max(values.reshape(-1,1)))
-            min_v = min(min_v, min(values.reshape(-1,1)))
+            max_v = max(max_v, max(values))
+            min_v = min(min_v, min(values))
         return min_v.item(), max_v.item()
     
-    # def normalize(self, in_dir, mean, std):
-    #     max_value = np.finfo(np.float64).min
-    #     min_value = np.finfo(np.float64).max
-    #     for filename in os.listdir(in_dir):
-    #         filename = os.path.join(in_dir, filename)
-    #         values = (np.load(filename) - mean) / std
-    #         np.save(filename, values)
-
-    #         max_value = max(max_value, max(values))
-    #         min_value = min(min_value, min(values))
-
-    #     return min_value.item(), max_value.item()
+    def remove_outlier(self, values):
+        values = np.array(values)
+        p25 = np.percentile(values, 25)
+        p75 = np.percentile(values, 75)
+        lower = p25 - 1.5 * (p75 - p25)
+        upper = p75 + 1.5 * (p75 - p25)
+        normal_indices = np.logical_and(values > lower, values < upper)
+        return values[normal_indices]
     
     def process_datapoint(self, wav_txt_dir, tg_speaker_dir, basename):
         wav_path = f"{wav_txt_dir}/{basename}.wav"
@@ -324,54 +268,3 @@ class CreateDataset():
         durations = durations[:end_idx]
         return phonemes, durations, start_time, end_time
     
-    
-def embed_speaker_for_processed_dataset(processed_dataset_path, config):
-    '''
-    For extracting speakers embedding when dataset (mel, pitch, energy)
-    has already been computed, saves you from reprocessing everything
-    '''
-    # Speaker Embedding
-    from speaker_encoder.compute_embedding import SpeechEmbedding
-    from .utils import load_speaker_encoder_config
-
-
-    with open(config) as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-    
-    # Load model
-    speaker_embedding_config = load_speaker_encoder_config(
-        config['speaker_embedding']['config_path'])
-    speech_emb = SpeechEmbedding(
-        speaker_embedding_config, 
-        config['speaker_embedding']['model_path'])
-    # Get speakers
-    print('Loading speakers')
-    for speaker in tqdm(os.listdir(processed_dataset_path)):
-        root = f'{processed_dataset_path}/{speaker}'
-        os.makedirs(f'{root}/speaker', exist_ok=True) 
-        # Load data
-        with open(f'{root}/{speaker}_data.json', 'r') as f:
-            data_f = json.loads(f.read())
-        # Save embedding
-        print('Loading data...')
-        for data_point in tqdm(data_f['data']):
-            mel = np.load(f'{root}/{data_point["mel"]}')
-            
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
-            emb = speech_emb.model.compute_embedding(
-                torch.tensor(mel).unsqueeze(0).transpose(1,2).to(device))
-            
-            f_name = f'{root}/speaker/{data_point["id"]}-speaker.npy' 
-            np.save(f_name, emb.cpu())
-            data_point['speaker'] = f'speaker/{data_point["id"]}-speaker.npy'
-            print(root, data_point['id'])
-        with open(f'{root}/{speaker}_data.json', 'w') as f:
-            data_f = f.write(json.dumps(data_f))
-            
-        print(f'Completed speaker {speaker}..')
-        
-
-    print('Speaker embedding computation complete!')
-            
-        
-

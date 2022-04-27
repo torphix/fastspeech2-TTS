@@ -68,7 +68,7 @@ Alternativly you can run each seperate command for a granular understanding of t
 
 - Extract additional features about the data as input to the model, this leads to faster convergance and may be necessary for convergance to begin with.
 - Attempt to overfit on small subset of data when ever significant changes are made to see if that was what the error was due to
-- 
+- Use an LR Scheduler! When hitting local optima in a high dimensional space it becomes very important to use LR Annealing 
 ### Notes
 1. Due to my lack of compute I used a pretrained speaker encoder to extract the embedings for voices, the model used had been trained on 100s of voices over 4 large datasets
     git clone https://github.com/HamedHemati/SpeakerEncoder.git

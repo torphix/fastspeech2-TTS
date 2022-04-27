@@ -3,7 +3,6 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-from zmq import device
 from .layers import *
 
 # Attention Layers
@@ -90,7 +89,6 @@ class FFTBlock(nn.Module):
         self.attention = MultiHeadedAttention(n_heads, in_d, in_d, in_d)
         self.post_layers = nn.Sequential(
             ConvLayer(in_d, hid_d, kernel),
-            nn.LayerNorm(hid_d),
             nn.ReLU(),
             ConvLayer(hid_d, out_d, kernel),
             nn.LayerNorm(out_d),
@@ -101,7 +99,7 @@ class FFTBlock(nn.Module):
             return x.masked_fill(mask.unsqueeze(-1), 0)
         else: return x
 
-    def forward(self, x, mask=None):
+    def forward(self, x, mask):
         # [BS, L, N]
         out, attention_score = self.attention(x, x, x, mask)
         out = self.apply_pad_mask(out, mask)

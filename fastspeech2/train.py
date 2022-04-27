@@ -48,8 +48,7 @@ def train(model_config, trainer_config, data_config, ckpt_path=None):
                                    val_dl=val_dl)
     ckpt_path = trainer_config['checkpoint_path']
     trainer_config.pop('checkpoint_path')
-    
-    logger = TensorBoardLogger("fastspeech2/checkpoints", 'fs2')
+    logger = TensorBoardLogger("tb_logs", 'fs2')
     trainer = ptl.Trainer(**trainer_config,
                           logger=logger)
     trainer.fit(

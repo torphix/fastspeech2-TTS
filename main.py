@@ -33,9 +33,9 @@ if __name__ == '__main__':
         parser.add_argument('--dataset', required=True)
         args, leftover_args = parser.parse_known_args()
         update_config_with_arg(data_config, args)
-        # download_dataset(args.dataset)
-        # prepare_for_alignment(data_config)
-        # align_corpus(data_config)
+        download_dataset(args.dataset)
+        prepare_for_alignment(data_config)
+        align_corpus(data_config)
         logger.info('Alignment Complete, processing dataset...')
         with open(f'fastspeech2/config/data.yaml', 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
@@ -85,7 +85,7 @@ if __name__ == '__main__':
                 data_config,
                 args.ckpt_path)
         
-    elif command == 'inference':
+    elif command == 'fs2_inference':
         parser.add_argument('--text', required=True,
                             help='Text to transcribe')
         parser.add_argument('--model_path',required=True, 

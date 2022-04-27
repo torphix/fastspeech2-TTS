@@ -4,7 +4,7 @@ import pytorch_lightning as ptl
 from .loss import FastSpeech2Loss
 from .fastspeech2 import FastSpeech2
 from .utils import get_mask_from_lengths, plot_mel
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import StepLR
 
 class FS2TrainingModule(ptl.LightningModule):
     def __init__(self, 
@@ -31,6 +31,10 @@ class FS2TrainingModule(ptl.LightningModule):
     def val_dataloader(self):
         return self.val_dl
     
+    def add_log(self, names, losses, batch_idx):
+        for i in range(len(names)):
+            self.log.add_scalar(names[i], losses[i], batch_idx)
+    
     def forward(self, 
                 phonemes,
                 durations,
@@ -47,8 +51,7 @@ class FS2TrainingModule(ptl.LightningModule):
                         mel_masks=mel_masks,
                         true_pitch=pitch,
                         true_energy=energy,
-                        durations=durations,
-                        speaker_embedding=speaker_emb) 
+                        durations=durations) 
     
     def training_step(self, batch, batch_idx):
         (mels, 
@@ -60,7 +63,7 @@ class FS2TrainingModule(ptl.LightningModule):
          mel_masks,
          mel_lens,
          speakers) = self.unpack_batch(batch)
-        print(torch.max(mels), torch.max(energies))
+
         output = self.forward(phonemes=text,
                               durations=durations,
                               energy=energies,
@@ -70,21 +73,18 @@ class FS2TrainingModule(ptl.LightningModule):
                               mels=mels,
                               mel_lens=mel_lens,
                               speaker_emb=speakers)
-        test = output[0].clone().transpose(1,2).detach().cpu().numpy()
-        print(batch['raw_text'])
-        plot_mel(test, ['Ouptut'])
+
         
         loss = self.loss(output, 
                          (mels, pitchs, energies, durations),
                          text_masks, mel_masks)
-        
         logs = {
             'total_loss':sum(loss),
             'mel_postnet_loss': loss[0],
             'mel_loss': loss[1],
             'pitch_loss': loss[2],
             'energy_loss': loss[3],
-            'duration_loss': loss[4]
+            'duration_loss': loss[4],
             }
         
         return {'loss': sum(loss), 'logs': logs}
@@ -114,13 +114,21 @@ class FS2TrainingModule(ptl.LightningModule):
                          (mels, pitchs, energies, durations),
                          text_masks, mel_masks)
         
+        out_mel = output[0].clone().transpose(1,2).detach().cpu().numpy()
+        plot_mel(out_mel, ['Ouptut'])
+        print('Energies max min',torch.min(energies), torch.max(energies), torch.min(output[3]), torch.max(output[3]))
+        print('Pitch max min',torch.min(pitchs), torch.max(pitchs), torch.min(output[2]), torch.max(output[2]))
+        print('Mel max min',torch.min(mels), torch.max(mels), torch.min(output[0]), torch.max(output[0]))
+        
         self.log('val_loss', sum(loss))
         return loss
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return {'optimizer':optimizer,
-                'scheduler': ReduceLROnPlateau(optimizer)}
+        optimizer = torch.optim.Adam(self.parameters(), lr=2e-4, 
+                                     betas=[0.9, 0.98], eps=1e-9,
+                                     weight_decay=0)
+        scheduler = StepLR(optimizer, step_size=2, gamma=0.5)
+        return [optimizer], [scheduler]
     
     def unpack_batch(self, batch):
         # Note this is bad practice as is slow, should init on device

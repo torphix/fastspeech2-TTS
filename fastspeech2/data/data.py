@@ -38,25 +38,32 @@ class FS2Dataset(Dataset):
         }
         '''
         datapoint = self.data[idx]
+        
+        datapoint['duration'] = f'duration/LJSpeech-duration-{datapoint["id"]}.npy'
+        datapoint['pitch'] = f'pitch/LJSpeech-pitch-{datapoint["id"]}.npy'
+        datapoint['mel'] = f'mel/LJSpeech-mel-{datapoint["id"]}.npy'
+        datapoint['energy'] = f'energy/LJSpeech-energy-{datapoint["id"]}.npy'
+        
         datapoint['raw_text'] = self.data[idx]['raw_text']
         datapoint['duration'] = torch.tensor(
             np.load(f"{self.root_dir}/{datapoint['duration']}"))
         datapoint['pitch'] = torch.tensor(
             np.load(f"{self.root_dir}/{datapoint['pitch']}"))
         datapoint['mel'] = torch.tensor(
-            np.load(f"{self.root_dir}/{datapoint['mel']}"))
+            np.load(f"{self.root_dir}/{datapoint['mel']}")).transpose(0,1)
         datapoint['energy'] = torch.tensor(
             np.load(f"{self.root_dir}/{datapoint['energy']}"))
         
         datapoint['phonemes'] = torch.tensor(
             text_to_sequence("{" + f"{' '.join(datapoint['phonemes'])}" + "}", 
                              cleaner_names=self.text_cleaners))
-        
+
         if self.speaker_emb == 'quant':
             datapoint['speaker'] = torch.tensor(int(self.root_dir.split("/")[-1]))
         elif self.speaker_emb == 'lstm':
             datapoint['speaker'] = np.load(f"{self.root_dir}/{datapoint['speaker']}")
         return datapoint
+
 
 def collate_fn(batch):
     durations=[]
@@ -98,7 +105,6 @@ def concat_dataset(dataset_paths, text_cleaners, speaker_emb):
     datasets = [FS2Dataset(ds, text_cleaners, speaker_emb) for ds in dataset_paths]
     return ConcatDataset(datasets)
 
-
 def get_dataloaders(
     dataset_paths, 
     text_cleaners, 
@@ -117,7 +123,8 @@ def get_dataloaders(
     train_ds, val_ds = random_split(dataset, split)
     train_dl = DataLoader(train_ds, **dataloader_config,
                           collate_fn=collate_fn)
+    dataloader_config.pop("shuffle")
     val_dl = DataLoader(val_ds, **dataloader_config,
+                        shuffle=False,
                         collate_fn=collate_fn)
     return train_dl, val_dl
-

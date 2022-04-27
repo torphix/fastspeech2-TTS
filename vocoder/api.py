@@ -4,11 +4,11 @@ from . import AttrDict, Generator
 
 
 def get_vocoder(device):
-    with open("vocoder/config.json", "r") as f:
+    with open("vocoder/LJ_V1/config.json", "r") as f:
         config = json.load(f)
     config = AttrDict(config)
     vocoder = Generator(config)
-    ckpt = torch.load("vocoder/generator_universal.pth.tar",
+    ckpt = torch.load("vocoder/LJ_V1/generator_v1.pth.tar",
                       map_location=device)
     vocoder.load_state_dict(ckpt["generator"])
     vocoder.eval()

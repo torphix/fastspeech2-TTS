@@ -50,7 +50,7 @@ class LengthRegulator(nn.Module):
             
 
 class Predictor(nn.Module):
-    def __init__(self, in_d, hid_d, out_d, k_size, dropout=0.5):
+    def __init__(self, in_d, hid_d, out_d, k_size, dropout=0.2):
         super(Predictor, self).__init__()
 
         self.layers = nn.Sequential(
@@ -62,7 +62,7 @@ class Predictor(nn.Module):
             # # L2
             ConvLayer(hid_d, hid_d, k_size),
             nn.ReLU(),
-            # nn.LayerNorm(hid_d),
+            nn.LayerNorm(hid_d),
             nn.Dropout(dropout),
             # L3
             ConvLayer(hid_d, out_d, k_size),
@@ -138,10 +138,10 @@ class VarianceAdaptor(nn.Module):
         if ground_truth is None: # Inference
             pitch_preds = pitch_preds * alpha
             embedding = self.pitch_embedding(
-                torch.bucketize(pitch_preds, self.pitch_bins))
+                self.bucketize(pitch_preds, self.pitch_bins))
         else: # Training
             embedding = self.pitch_embedding(
-                torch.bucketize(ground_truth, self.pitch_bins))
+                self.bucketize(ground_truth, self.pitch_bins))
         return pitch_preds, embedding
 
     def embed_energy(self, x, ground_truth, alpha, mask=None):
@@ -155,7 +155,8 @@ class VarianceAdaptor(nn.Module):
                 self.bucketize(ground_truth, self.energy_bins))
         return energy_preds, embedding
     
-    def forward(self, phonemes, 
+    def forward(self, 
+                phonemes, 
                 phoneme_masks=None,
                 mel_masks=None,
                 true_pitch=None, 
@@ -182,7 +183,6 @@ class VarianceAdaptor(nn.Module):
             pitch_preds, pitch_embedding = self.embed_pitch(
                 x, true_pitch, pitch_alpha, phoneme_masks)
             x = x + pitch_embedding
-            
         if self.energy_feature_level == 'phoneme_frame':
             energy_preds, energy_embedding = self.embed_energy(
                 x, true_energy, energy_alpha, phoneme_masks)  
@@ -202,3 +202,9 @@ class VarianceAdaptor(nn.Module):
         
         return x, pitch_preds, energy_preds, log_durations_pred
         
+
+
+# Why is pitch and duration not decreasing?
+# What are the operations only happening to these?
+# Loss correct?
+# Inputs / outputs correct?
