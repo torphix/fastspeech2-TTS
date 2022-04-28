@@ -71,7 +71,7 @@ class FastSpeech2(nn.Module):
         # Postnet
         mel_preds = self.projection(mel_preds)            
         mel_preds = self.decoder(mel_preds, mel_masks)
-        mel_postnet_pred = self.postnet(mel_preds) + mel_preds
+        mel_postnet_pred = self.postnet(mel_preds) 
         return mel_postnet_pred, mel_preds, \
                 pitch_preds, energy_preds, log_duration_preds
 

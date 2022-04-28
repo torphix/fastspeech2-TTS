@@ -7,24 +7,32 @@ class Postnet(nn.Module):
         super(Postnet, self).__init__()
 
         self.layers = nn.ModuleList([
-            ConvLayer(80, 256, kernel_size=5),
+            nn.Conv1d(80, 256, kernel_size=5, padding=(5-1)//2),
+            nn.BatchNorm1d(256),
             nn.Tanh(),
             nn.Dropout(dropout)])
         
         for n in range(n_layers-2):
             self.layers.append(nn.Sequential(
-                ConvLayer(256, 256, kernel_size=5),
+                nn.Conv1d(256 if n == 0 else 512, 512,
+                          kernel_size=5,
+                          padding=(5-1)//2),
+                nn.BatchNorm1d(512),         
                 nn.Tanh(),
                 nn.Dropout(dropout),
-                nn.LayerNorm(256),         
             ))
             
         self.layers.append(
            nn.Sequential(
-            ConvLayer(256, 80, kernel_size=5),
+            nn.Conv1d(512, 80, kernel_size=5,
+                      padding=(5-1)//2),
+            nn.BatchNorm1d(80),
            ))
         
         self.layers = nn.Sequential(*self.layers)
         
     def forward(self, x):
-        return self.layers(x)       
+        x = x.transpose(1,2).contiguous()
+        x = self.layers(x)
+        x = x.transpose(1,2).contiguous()
+        return x

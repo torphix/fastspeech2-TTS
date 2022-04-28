@@ -127,7 +127,7 @@ class FS2TrainingModule(ptl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=2e-4, 
                                      betas=[0.9, 0.98], eps=1e-9,
                                      weight_decay=0)
-        scheduler = StepLR(optimizer, step_size=2, gamma=0.5)
+        scheduler = StepLR(optimizer, step_size=1, gamma=0.95)
         return [optimizer], [scheduler]
     
     def unpack_batch(self, batch):
