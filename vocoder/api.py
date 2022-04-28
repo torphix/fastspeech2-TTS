@@ -1,14 +1,22 @@
+import os
 import json
 import torch
+import zipfile
 from . import AttrDict, Generator
 
 
+
 def get_vocoder(device):
-    with open("vocoder/LJ_V1/config.json", "r") as f:
+    with open("vocoder/config.json", "r") as f:
         config = json.load(f)
     config = AttrDict(config)
     vocoder = Generator(config)
-    ckpt = torch.load("vocoder/LJ_V1/generator_v1.pth.tar",
+    if os.path.exists("vocoder/generator_LJSpeech.pth.tar") == False:
+        print('Please wait extracting vocoder weights')
+        with zipfile.ZipFile('vocoder/generator_LJSpeech.pth.tar.zip', 'r') as zip_ref:
+            zip_ref.extractall('vocoder/')
+            
+    ckpt = torch.load("vocoder/generator_LJSpeech.pth.tar",
                       map_location=device)
     vocoder.load_state_dict(ckpt["generator"])
     vocoder.eval()

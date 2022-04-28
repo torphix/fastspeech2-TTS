@@ -1,8 +1,7 @@
 import math
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from fastspeech2.model.utils import pad
+from ..utils import pad
 
 # Custom Layers
 class CosinePositionalEncoding(nn.Module):

@@ -6,7 +6,6 @@ processed_dataset/
 checkpoints/
 .ipynb_checkpoints/
 output_wavs/
-trained_models/
 tb_logs/
 *.pth
 *.tar

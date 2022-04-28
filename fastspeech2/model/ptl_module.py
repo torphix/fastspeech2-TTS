@@ -9,18 +9,19 @@ from torch.optim.lr_scheduler import StepLR
 class FS2TrainingModule(ptl.LightningModule):
     def __init__(self, 
                  model_config, 
+                 train_config,
                  audio_metadata,
                  train_dl=None, 
                  val_dl=None):
         super(FS2TrainingModule, self).__init__()
         # Config
-        with open(model_config) as f:
-            self.config = yaml.load(f, Loader=yaml.FullLoader)
-
+        self.model_config = model_config
+        self.train_config = train_config
+        
         # Model
-        self.fs2 = FastSpeech2(self.config['model'], audio_metadata)
-        self.loss = FastSpeech2Loss(self.config['model']['variance_config']['energy_feature_level'],
-                                    self.config['model']['variance_config']['pitch_feature_level'])
+        self.fs2 = FastSpeech2(self.model_config['model'], audio_metadata)
+        self.loss = FastSpeech2Loss(self.model_config['model']['variance_config']['energy_feature_level'],
+                                    self.model_config['model']['variance_config']['pitch_feature_level'])
         
         # Data
         self.train_dl, self.val_dl = train_dl, val_dl
@@ -124,10 +125,9 @@ class FS2TrainingModule(ptl.LightningModule):
         return loss
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=2e-4, 
-                                     betas=[0.9, 0.98], eps=1e-9,
-                                     weight_decay=0)
-        scheduler = StepLR(optimizer, step_size=1, gamma=0.95)
+        optimizer = torch.optim.Adam(self.parameters(), 
+                                     **self.train_config['optimizer'])
+        scheduler = StepLR(optimizer,**self.train_config['scheduler'])
         return [optimizer], [scheduler]
     
     def unpack_batch(self, batch):

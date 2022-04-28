@@ -4,7 +4,6 @@ import json
 import yaml
 import torch
 import matplotlib
-import numpy as np
 from matplotlib import pyplot as plt
 matplotlib.use("Agg")
 

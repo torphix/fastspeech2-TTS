@@ -9,17 +9,17 @@ from .model.ptl_module import FS2TrainingModule
 from pytorch_lightning.loggers import TensorBoardLogger
 
 
-def train(model_config, trainer_config, data_config, ckpt_path=None):
+def train(model_config, train_config, data_config, ckpt_path=None):
     # Load configs
     with open(model_config) as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-    with open(trainer_config) as f:
-        trainer_config = yaml.load(f, Loader=yaml.FullLoader)
+        model_config = yaml.load(f, Loader=yaml.FullLoader)
+    with open(train_config) as f:
+        train_config = yaml.load(f, Loader=yaml.FullLoader)
     with open(data_config) as f:
         data_config = yaml.load(f, Loader=yaml.FullLoader)
     if ckpt_path is not None:
         print(f'Loading Checkpoint from {ckpt_path}')
-        trainer_config['checkpoint_path'] = ckpt_path
+        train_config['checkpoint_path'] = ckpt_path
     # Get data
     train_paths = []        
     rootdir = f'{data_config["dataset_dir"]}/{data_config["dataset"]}/processed_dataset'
@@ -33,8 +33,8 @@ def train(model_config, trainer_config, data_config, ckpt_path=None):
     train_dl, val_dl = get_dataloaders(
                         train_paths, 
                         data_config['text']['text_cleaners'],
-                        config['dataloader'],
-                        config['speaker_embedding']['type'])
+                        model_config['dataloader'],
+                        model_config['speaker_embedding']['type'])
     
     # Get metadata for the pitch & energy embeddings
     ds_path = f'{data_config["dataset_dir"]}/{data_config["dataset"]}/processed_dataset/all_metadata.json'
@@ -43,13 +43,14 @@ def train(model_config, trainer_config, data_config, ckpt_path=None):
         
     # Train
     fs2_module = FS2TrainingModule(model_config=model_config, 
+                                   train_config=train_config,
                                    audio_metadata=audio_metadata,
                                    train_dl=train_dl, 
                                    val_dl=val_dl)
-    ckpt_path = trainer_config['checkpoint_path']
-    trainer_config.pop('checkpoint_path')
+    ckpt_path = train_config['checkpoint_path']
+    train_config.pop('checkpoint_path')
     logger = TensorBoardLogger("tb_logs", 'fs2')
-    trainer = ptl.Trainer(**trainer_config,
+    trainer = ptl.Trainer(**train_config['trainer'],
                           logger=logger)
     trainer.fit(
         fs2_module,

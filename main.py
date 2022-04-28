@@ -28,7 +28,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
-    if command == 'fs2_make_dataset':
+    if command == 'make_dataset':
         data_config = 'fastspeech2/config/data.yaml'
         parser.add_argument('--dataset', required=True)
         args, leftover_args = parser.parse_known_args()
@@ -48,7 +48,7 @@ if __name__ == '__main__':
         download_dataset(args.dataset)
         
     # Fastspeech 2 Methods
-    elif command == 'fs2_prepare_dataset':
+    elif command == 'prepare_dataset':
         data_config = 'fastspeech2/config/data.yaml'
         parser.add_argument('--dataset')
         args, leftover_args = parser.parse_known_args()
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             update_config_with_arg(data_config, args)
         prepare_for_alignment(data_config)
             
-    elif command == 'fs2_align_dataset':
+    elif command == 'align_dataset':
         data_config = 'fastspeech2/config/data.yaml'
         parser.add_argument('--dataset')
         args, leftover_args = parser.parse_known_args()
@@ -64,7 +64,7 @@ if __name__ == '__main__':
             update_config_with_arg(data_config, args)
         align_corpus(data_config)
             
-    elif command == 'fs2_create_dataset':
+    elif command == 'create_dataset':
         parser.add_argument('--config_dir', default='fastspeech2/config')
         args, leftover_args = parser.parse_known_args()
         with open(f'fastspeech2/config/data.yaml', 'r') as f:
@@ -72,20 +72,20 @@ if __name__ == '__main__':
         create_dataset = CreateDataset(f'fastspeech2/config/data.yaml')
         create_dataset.process_aligned_corpus()
             
-    elif command == 'fs2_train':
+    elif command == 'train':
         parser.add_argument('--config_dir', default='fastspeech2/config')
         parser.add_argument('--ckpt_path', required=False)
         args, leftover_args = parser.parse_known_args()
         # Load configs
         model_config = f'fastspeech2/config/model.yaml'
         data_config = f'fastspeech2/config/data.yaml'
-        trainer_config = f'fastspeech2/config/trainer.yaml'
+        trainer_config = f'fastspeech2/config/train.yaml'
         train(model_config, 
                 trainer_config, 
                 data_config,
                 args.ckpt_path)
         
-    elif command == 'fs2_inference':
+    elif command == 'inference':
         parser.add_argument('--text', required=True,
                             help='Text to transcribe')
         parser.add_argument('--model_path',required=True, 
@@ -128,11 +128,11 @@ if __name__ == '__main__':
     else:
         print(f'''
               Command "{command}" not recognized, options are:
-                - fs2_make_dataset
-                - fs2_prepare_dataset
-                - fs2_align_dataset
-                - fs2_create_dataset
-                - fs2_train
+                - make_dataset
+                - prepare_dataset
+                - align_dataset
+                - create_dataset
+                - train
                 - inference
                 - flush_data
                 - flush_wavs

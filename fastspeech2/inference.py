@@ -82,9 +82,7 @@ def inference(text,
                 open_config(model_config)['model'], 
                 audio_metadata)
     else:
-        model_path = natsorted([f'fastspeech2/trained_models/{file}'
-                                for file in os.listdir('fastspeech2/trained_models')])[-1]
-        logger.info(f'Model path not provided, loading {model_path}')
+        logger.info(f'Model path not provided, specify path with flag --model_path')
         
         with open(model_config, 'r') as f:
             model_config = yaml.loader(f.read(), Loader=yaml.FullLoader)
