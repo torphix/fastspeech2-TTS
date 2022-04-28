@@ -42,7 +42,7 @@ Alternativly you can run each seperate command if you are finetuning on custom d
 
 # Inference
 
-- `python main.py inference --text='I need your clothes, your boots, and your motorcycle' --model_path='path/to/model.pth.tar` pretrained model is [here]()
+- `python main.py inference --text='I need your clothes, your boots, and your motorcycle' --model_path='path/to/model.pth.tar` pretrained model is [here](https://drive.google.com/file/d/1DjG5GrNFHWYKen_C_RJB-TUUE655i9gv/view?usp=sharing)
 Leave model_path blank to inference with default 
 Trained models are saved to fastspeech2/trained_models
 
