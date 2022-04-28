@@ -14,10 +14,10 @@ def download_dataset(name):
         if os.path.isfile(f'{data_root}/LJSpeech/LJSpeech-1.1.tar.bz2'):
             logging.info('LJSpeech corpus already downloaded.. skipping to extraction')
         else:
-            logging.info('Downloading LJSpeech corpus')
+            logging.info('Downloading LJSpeech corpus \n')
             wget.download('https://data.keithito.com/data/speech/LJSpeech-1.1.tar.bz2',
                           out=f'{data_root}/LJSpeech')
-        logging.info('Extracting LJSpeech corpus, this usually takes a few minutes, Please wait...')
+        logging.info('Extracting LJSpeech corpus, this usually takes a few minutes, Please wait... \n')
         tarball = tarfile.open(f'{data_root}/LJSpeech/LJSpeech-1.1.tar.bz2', 'r:bz2') 
         os.makedirs(f'{data_root}/LJSpeech/raw_data', exist_ok=True)
         tarball.extractall(f'{data_root}/LJSpeech/raw_data')

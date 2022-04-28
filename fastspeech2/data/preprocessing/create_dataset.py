@@ -70,7 +70,7 @@ class CreateDataset():
             tg_speaker_dir = f"{self.input_data_dir}/{speaker}/TextGrid"
             
             output_data_dir = f'{self.output_data_dir}/{speaker}'
-            shutil.rmtree(output_data_dir)
+            shutil.rmtree(output_data_dir, ignore_errors=True)
             os.makedirs(f"{output_data_dir}/duration", exist_ok=True)
             os.makedirs(f"{output_data_dir}/pitch", exist_ok=True)
             os.makedirs(f"{output_data_dir}/energy", exist_ok=True)
@@ -118,7 +118,7 @@ class CreateDataset():
                     'energy':energy_fname,
                     'pitch':pitch_fname,
                 })
-                # if idx == 20: break
+                # if idx == 24: break
             with open(f'{output_data_dir}/{speaker}_data.json', 'w') as json_datafile:
                 json_datafile.write(json.dumps(
                     {

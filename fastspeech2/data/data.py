@@ -38,19 +38,13 @@ class FS2Dataset(Dataset):
         }
         '''
         datapoint = self.data[idx]
-        
-        datapoint['duration'] = f'duration/LJSpeech-duration-{datapoint["id"]}.npy'
-        datapoint['pitch'] = f'pitch/LJSpeech-pitch-{datapoint["id"]}.npy'
-        datapoint['mel'] = f'mel/LJSpeech-mel-{datapoint["id"]}.npy'
-        datapoint['energy'] = f'energy/LJSpeech-energy-{datapoint["id"]}.npy'
-        
         datapoint['raw_text'] = self.data[idx]['raw_text']
         datapoint['duration'] = torch.tensor(
             np.load(f"{self.root_dir}/{datapoint['duration']}"))
         datapoint['pitch'] = torch.tensor(
             np.load(f"{self.root_dir}/{datapoint['pitch']}"))
         datapoint['mel'] = torch.tensor(
-            np.load(f"{self.root_dir}/{datapoint['mel']}")).transpose(0,1)
+            np.load(f"{self.root_dir}/{datapoint['mel']}"))
         datapoint['energy'] = torch.tensor(
             np.load(f"{self.root_dir}/{datapoint['energy']}"))
         
@@ -116,7 +110,8 @@ def get_dataloaders(
     
     dataset = concat_dataset(dataset_paths, text_cleaners, speaker_emb)
     # Split Dataset
-    split = [int(dataset.__len__()/100 * split[0]), int(dataset.__len__()/100 * split[1])]
+    train_size = int(dataset.__len__()/100 * split[0])
+    split = [train_size, int(dataset.__len__() - train_size)]
     if sum(split) != dataset.__len__(): 
         split[0] += dataset.__len__() - sum(split)
     # Get Dataloaders

@@ -19,3 +19,9 @@ scheduler:
   step_size: 1
   gamma: 0.95 # Multiple to reduce LR by each step
   
+dataloader:
+  batch_size: 4
+  num_workers: 2
+  shuffle: True
+  pin_memory: False
+  split: [99, 1]

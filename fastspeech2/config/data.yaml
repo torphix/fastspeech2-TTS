@@ -8,7 +8,7 @@ audio:
   n_fft: 1024
   n_mels: 80
   norm_type: mean_std
-  normalization: true
+  normalisation: true
   pitch_feature_level: phoneme_frame
   sample_rate: 22050
   win_length: 1024

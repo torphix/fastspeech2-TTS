@@ -33,7 +33,7 @@ def train(model_config, train_config, data_config, ckpt_path=None):
     train_dl, val_dl = get_dataloaders(
                         train_paths, 
                         data_config['text']['text_cleaners'],
-                        model_config['dataloader'],
+                        train_config['dataloader'],
                         model_config['speaker_embedding']['type'])
     
     # Get metadata for the pitch & energy embeddings

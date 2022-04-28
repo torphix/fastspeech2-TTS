@@ -37,10 +37,3 @@ speaker_embedding:
   type: null # 'lstm' / 'quant' / None
   model_path: speaker_encoder/pretrained_model/best_model.pth.tar
   config_path: speaker_encoder/pretrained_model/config.json
-
-dataloader:
-  batch_size: 4
-  num_workers: 2
-  shuffle: True
-  pin_memory: False
-  split: [99, 1]
