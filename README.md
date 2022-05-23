@@ -21,7 +21,7 @@ One helper method is provided that will download, prepare, align and create data
  `python main.py make_dataset --dataset LJSpeech`
 
 ### Option 2: Multi command data processing pipeline (Custom datasets)
-Alternativly you can run each seperate command if you are finetuning on custom dataset:
+Alternatively you can run each separate command if you are finetuning on custom dataset:
 1. Download & extract dataset with command `python main.py download_dataset --dataset LJSpeech` (currently only LJSpeech supported)
 2. Prepare dataset with command `python main.py prepare_dataset --dataset LJSpeech` or edit config file under fastspeech2/config/data.yaml
    - To use with your own dataset write a custom function under `fastspeech2/data/database/preprocessing/prepare_dataset.py`
