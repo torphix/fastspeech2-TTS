@@ -201,10 +201,3 @@ class VarianceAdaptor(nn.Module):
                 x, true_energy, energy_alpha, mel_masks)        
         
         return x, pitch_preds, energy_preds, log_durations_pred
-        
-
-
-# Why is pitch and duration not decreasing?
-# What are the operations only happening to these?
-# Loss correct?
-# Inputs / outputs correct?
